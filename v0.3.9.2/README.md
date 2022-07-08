@@ -3,7 +3,7 @@
 
 ### How to install:
 
-- Download the patch [here](https://github.com/OpenYiffGames/HeatGame/releases/download/v0.6.7/LoginBypassPatch-x64.zip)
+- Download the patch [here](https://github.com/OpenYiffGames/HeatGame/releases/download/v0.3.9.2/PatreonAuthBypass.zip)
 - Locate your Heat game directory and open it
 - Rename GameAssembly.dll to GameAssembly_old.dll
 - Extract the GameAssembly.dll from the patch into the Heat directory
