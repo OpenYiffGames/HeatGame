@@ -25,7 +25,6 @@ partial class PatternBuilder
         _builder.Replace(" ", "");
     }
 
-    [RequiresDynamicCode("Calls System.Type.MakeGenericType(params Type[])")]
     public string Render(object? obj)
     {
         foreach (var symbol in symbols)
