@@ -44,7 +44,7 @@ jobs:
         working-directory: Tools/HeatDownloader
         run: |
           pip install pyinstaller
-          pyinstaller heat_downloader/cli.py --name HeatDownloader
+          pyinstaller --onefile heat_downloader/__main__.py --name HeatDownloader
           mkdir ../../output/HeatDownloader
           move dist\* ../../output/HeatDownloader/
 
