@@ -50,3 +50,7 @@ python -m heat_downloader --output my-download-directory/
 ```bash
 heat_downloader list
 ```
+
+## Prebuilt binaries
+If you are too lazy to install the module, you can check the [release session](OpenYiffGames/HeatGame/releases) where we have a single .exe packed with [PyInstaller](https://github.com/pyinstaller/pyinstaller).
+Keep in mind that these binaries are auto-generated, please open an issue if you have any problems

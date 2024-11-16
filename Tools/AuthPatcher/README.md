@@ -17,3 +17,6 @@ Well, as you can see, I can't afford to manually write patches for every single 
 - Run the executable and choose the game main executable or run the patcher by dragging the game executable to it
 - Wait for it to do its magic
 - Enjoy!
+
+## Prebuilt binaries
+You can easily compile the project by yourself or get the generated assembly in the [releases](OpenYiffGames/HeatGame/releases)
