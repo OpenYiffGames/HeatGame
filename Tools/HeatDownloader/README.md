@@ -1,3 +1,5 @@
+[![Release Builder](https://github.com/OpenYiffGames/HeatGame/actions/workflows/release.yml/badge.svg)](https://github.com/OpenYiffGames/HeatGame/actions/workflows/release.yml)
+
 # HeatDownloader
 
 This CLI tool allows you to download the latest build of heat. It is a simple patreon scraper that scans for releases and finds the build in the CDN server

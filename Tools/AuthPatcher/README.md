@@ -1,3 +1,5 @@
+[![Release Builder](https://github.com/OpenYiffGames/HeatGame/actions/workflows/release.yml/badge.svg)](https://github.com/OpenYiffGames/HeatGame/actions/workflows/release.yml)
+
 # Auth Patcher
 
 OwO what is this? This is a tool that automatically patches the paywall system (hopefully) on any game version after 0.6.5.1.
