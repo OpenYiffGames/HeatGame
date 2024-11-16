@@ -1,0 +1,63 @@
+name: Release Builder
+
+on:
+  push:
+    # tags:
+    #   - 'v*' # version trigger
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: windows-latest
+
+    steps:
+      # Checkout
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Setup .NET
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0'
+
+      # Setup Python
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12.3'
+
+      # dotnet build
+      - name: Build AuthPatcher
+        working-directory: Tools/AuthPatcher
+        run: |
+          dotnet restore
+          dotnet publish -c Release -o ../../output/AuthPatcher
+
+      # python dependencies
+      - name: Install Python dependencies
+        working-directory: Tools/HeatDownloader
+        run: pip install -r requirements.txt
+
+      # PyInstaller build
+      - name: Build HeatDownloader
+        working-directory: Tools/HeatDownloader
+        run: |
+          pip install pyinstaller
+          pyinstaller --onefile heat_downloader/cli.py --name HeatDownloader
+          mkdir ../../output/HeatDownloader
+          move dist\HeatDownloader.exe ../../output/HeatDownloader/
+
+      # Compress artifacts
+      - name: Compress artifacts
+        run: |
+          powershell Compress-Archive -Path output\* -DestinationPath output.zip
+
+      # Upload release artifacts
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: output.zip
+          token: ${{ secrets.GITHUB_TOKEN }}
+     
