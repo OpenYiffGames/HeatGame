@@ -9,8 +9,7 @@ namespace PatreonPatcher;
 partial class PatternBuilder
 {
     readonly StringBuilder _builder = new();
-    readonly HashSet<string> symbols = new();
-    readonly Dictionary<string, object> symbolValues = new();
+    readonly HashSet<string> symbols = [];
 
     public PatternBuilder(string pattern)
     {
@@ -25,8 +24,10 @@ partial class PatternBuilder
         _builder.Replace(" ", "");
     }
 
+    [RequiresUnreferencedCode("This method uses reflection to get property values from the object")]
     public string Render(object? obj)
     {
+        var symbolValues = new Dictionary<string, object?>();
         foreach (var symbol in symbols)
         {
             ArgumentNullException.ThrowIfNull(obj);
@@ -34,9 +35,19 @@ partial class PatternBuilder
                 ?? throw new ArgumentException($"Missing value for symbol '{symbol}'");
             symbolValues[symbol] = value;
         }
+        return Render(symbolValues);
+    }
+
+    public string Render(Dictionary<string, object?> values)
+    {
         foreach (var symbol in symbols)
         {
-            string formatedValue = symbolValues[symbol] switch
+            if (!values.TryGetValue(symbol, out var value))
+            {
+                throw new ArgumentException($"Missing value for symbol '{symbol}'");
+            }
+
+            string formatedValue = value switch
             {
                 int i => i.ToString("X"),
                 uint u => u.ToString("X"),
@@ -55,8 +66,7 @@ partial class PatternBuilder
         return FormatPattern(_builder);
     }
 
-    [RequiresDynamicCode("Calls PatreonPatcher.PatternBuilder.Render(Object)")]
-    public string Render() => Render(null);
+    public string Render() => Render([]);
 
     public PatternBuilder Write<T>(T value) where T : INumber<T>
     {

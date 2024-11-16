@@ -93,6 +93,8 @@ internal class Program
 ");
         Console.ForegroundColor = prevColor;
         Console.WriteLine("Patching successful!");
+        Console.WriteLine("Press any key to exit...");
+        Console.ReadKey();
     }
 
     public static void ShowErrorMessage()

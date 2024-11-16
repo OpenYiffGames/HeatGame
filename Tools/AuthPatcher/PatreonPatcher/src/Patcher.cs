@@ -24,7 +24,7 @@ internal class Patcher
         _assembliesPath = assembliesPath;
     }
 
-    [RequiresDynamicCode("Calls PatreonPatcher.src.Patcher.LoadMethods()")]
+    [RequiresDynamicCode("Calls PatreonPatcher.src.Patcher.IsPatched()")]
     public async Task<bool> PatchAsync()
     {
         if (!LoadMethods())
@@ -97,7 +97,6 @@ internal class Patcher
         return true;
     }
 
-    [RequiresDynamicCode("Calls PatreonPatcher.PatternBuilder.Render(Object)")]
     private  bool LoadMethods()
     {
         if (_methodsLoaded)
@@ -162,12 +161,11 @@ internal class Patcher
         var hwidStringToken = Utils.FindUserStringToken(authAssembly!, "HWID")!.Value.Raw;
         Logger.Info($"Found HWID string token: {hwidStringToken:X}");
 
-        var pBuilder = new PatternBuilder(Constants.Patterns.WriteAuthFunction);
-        string writeAuthPattern = pBuilder.Render(new
+        var patternBuilder = new PatternBuilder(Constants.Patterns.WriteAuthFunction);
+        string writeAuthPattern = patternBuilder.Render(new Dictionary<string, object?>()
         {
-            // Swap endianness
-            token = Utils.SwapEndianness(playerPrefsHasKeyToken),
-            string_token = Utils.SwapEndianness(hwidStringToken)
+            { "token", Utils.SwapEndianness(playerPrefsHasKeyToken) },
+            { "string_token", Utils.SwapEndianness(hwidStringToken) }
         });
         var writeAuthMethod = Utils.Pattern.FindTypeMethodMatchingPattern(authAssemblyStream, authType, writeAuthPattern);
         if (writeAuthMethod is null)
