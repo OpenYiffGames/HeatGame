@@ -1,5 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 
+namespace PatreonPatcher.Helpers;
+
 static class WindowsNative
 {
     [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Ansi)]

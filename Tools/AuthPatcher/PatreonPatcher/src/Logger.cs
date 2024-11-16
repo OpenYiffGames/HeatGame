@@ -1,4 +1,7 @@
-﻿static class Logger
+﻿
+namespace PatreonPatcher;
+
+static class Logger
 {
     public static ILoggerWriter Writer { get; set; } = new ConsoleLogger();
 

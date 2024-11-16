@@ -3,7 +3,7 @@ using System.Buffers;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 
-namespace PatreonPatcher;
+namespace PatreonPatcher.Helpers;
 
 static partial class Utils
 {

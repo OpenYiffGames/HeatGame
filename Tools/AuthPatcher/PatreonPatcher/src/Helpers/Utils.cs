@@ -1,6 +1,4 @@
 ﻿using dnlib.DotNet;
-using System.Globalization;
-using System.Numerics;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
@@ -8,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace PatreonPatcher;
+namespace PatreonPatcher.Helpers;
 
 static partial class Utils
 {
