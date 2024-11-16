@@ -1,6 +1,5 @@
-﻿
-using PatreonPatcher;
-using PatreonPatcher.src;
+﻿using PatreonPatcher;
+using PatreonPatcher.Helpers;
 using System.Diagnostics.CodeAnalysis;
 
 [RequiresDynamicCode("Calls PatreonPatcher.src.Patcher.PatchAsync()")]

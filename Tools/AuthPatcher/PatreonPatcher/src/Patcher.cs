@@ -1,9 +1,10 @@
 ﻿using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.PE;
+using PatreonPatcher.Helpers;
 using System.Diagnostics.CodeAnalysis;
 
-namespace PatreonPatcher.src;
+namespace PatreonPatcher;
 
 internal class Patcher
 {
@@ -97,14 +98,14 @@ internal class Patcher
         return true;
     }
 
-    private  bool LoadMethods()
+    private bool LoadMethods()
     {
         if (_methodsLoaded)
         {
             return true;
         }
 
-        var dlls= Directory.GetFiles(_assembliesPath, "*.dll");
+        var dlls = Directory.GetFiles(_assembliesPath, "*.dll");
         var assemblies = dlls.Select(OpenAssembly).ToList();
         Logger.Info($"Found {assemblies.Count} assemblies in {_assembliesPath}");
 
@@ -197,7 +198,7 @@ internal class Patcher
                 .Where(x => x.OpCode == OpCodes.Call &&
                     x.Operand is IMethodDefOrRef)
                 .Select(x => (x.Operand as IMethodDefOrRef).ResolveMethodDef())
-                .Any(def => def.RVA == writeAuthMethod.RVA 
+                .Any(def => def.RVA == writeAuthMethod.RVA
                     || def.RVA == invokeSuccessMethod.RVA);
 
             if (isCorrectMethod)

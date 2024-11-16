@@ -1,4 +1,5 @@
 ﻿using dnlib.DotNet;
+using PatreonPatcher.Helpers;
 
 namespace PatreonPatcher;
 

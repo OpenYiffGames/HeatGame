@@ -1,5 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 
+namespace PatreonPatcher.Helpers;
+
 static class WindowsUtils
 {
     public static string? ShowOpenFileDialog(string filter)
