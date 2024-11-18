@@ -18,5 +18,8 @@ Well, as you can see, I can't afford to manually write patches for every single 
 - Wait for it to do its magic
 - Enjoy!
 
+## Demo
+https://github.com/user-attachments/assets/896c7e32-b4de-452c-a1f8-e5277738ae04
+
 ## Prebuilt binaries
 You can easily compile the project by yourself or get the generated assembly in the [releases](https://github.com/OpenYiffGames/HeatGame/releases) or the [latested version](https://github.com/OpenYiffGames/HeatGame/releases/latest/download/tools.zip)
