@@ -52,10 +52,11 @@ heat_downloader list
 ```
 
 ## Demo
-![demo](/.github/images/download_demo.mp4)
+https://github.com/user-attachments/assets/0d669474-6797-41ff-bd2b-8259bcb63813
 
 ## Prebuilt binaries
 If you are too lazy to install the module, you can check the [release session](https://github.com/OpenYiffGames/HeatGame/releases) where we have a single .exe packed with [PyInstaller](https://github.com/pyinstaller/pyinstaller).
 Keep in mind that these binaries are auto-generated, please open an issue if you have any problems.\
 
 - [Lateted Version](https://github.com/OpenYiffGames/HeatGame/releases/latest/download/tools.zip)
+
