@@ -105,9 +105,8 @@ internal class Patcher
             return true;
         }
 
-        var dlls = Directory.GetFiles(_assembliesPath, "*.dll");
-        var assemblies = dlls.Select(OpenAssembly).ToList();
-        Logger.Info($"Found {assemblies.Count} assemblies in {_assembliesPath}");
+        var modules = Directory.GetFiles(_assembliesPath, "*.dll");
+        Logger.Info($"Found {modules.Length} assemblies in {_assembliesPath}");
 
         Stream? authAssemblyStream = null;
         MethodDef? invokeSuccessMethod = null;
@@ -115,11 +114,14 @@ internal class Patcher
         {
             MaxDegreeOfParallelism = 2
         };
-        Parallel.ForEach(assemblies, options, (assembly, loop) =>
+        Parallel.ForEach(modules, options, (modulePath, loop) =>
         {
+            var assembly = OpenAssembly(modulePath);
+
             int? rva = Utils.Pattern.FindMethodRVAMatchingPattern(assembly, Constants.Patterns.InvokeSuccessFunction);
             if (rva is null)
             {
+                assembly.Dispose();
                 return;
             }
 
@@ -172,6 +174,7 @@ internal class Patcher
         if (writeAuthMethod is null)
         {
             Logger.Error("Failed to find WriteAuthFunction");
+            authAssemblyStream.Dispose();
             return false;
         }
         Logger.Info($"Found {writeAuthMethod.FullName} at {writeAuthMethod.RVA:X}");
@@ -188,8 +191,12 @@ internal class Patcher
         if (bypassAuthFunctions.Length == 0)
         {
             Logger.Error("Failed to find BypassAuthFunction");
+            authAssemblyStream.Dispose();
             return false;
         }
+
+        // Dispose the stream after we're done with it
+        authAssemblyStream.Dispose();
 
         MethodDef? bypassAuthMethod = null;
         foreach (var method in bypassAuthFunctions)
