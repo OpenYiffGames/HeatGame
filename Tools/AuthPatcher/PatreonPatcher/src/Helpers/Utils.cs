@@ -1,4 +1,5 @@
 ﻿using dnlib.DotNet;
+using dnlib.IO;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
@@ -130,28 +131,21 @@ static partial class Utils
     public static MDToken? FindUserStringToken(this AssemblyDef assemblyDef, string value)
     {
         var usStream = (assemblyDef.ManifestModule as ModuleDefMD)!
-                .Metadata.USStream;
+            .Metadata.USStream;
 
         var usReader = usStream.CreateReader();
+        usReader.Position++; // First byte is zero
+        
         uint lenght = usStream.StreamLength;
-
-        uint rawToken = 0;
+        uint rawToken = 1; // The RID starts in 1
         while (lenght > 0)
         {
             var pos = usReader.Position;
-            int strLen = usReader.Read7BitEncodedInt32();
-            if (strLen < 0)
+            string str = usReader.ReadUserStringHeap();
+            if (str.Length > 0 && str == value)
             {
-                throw new Exception("No more bytes");
-            }
-            if (strLen > 0)
-            {
-                string str = usReader.ReadString(strLen - 1, Encoding.Unicode);
-                if (str == value)
-                {
-                    rawToken = 0x70 << 24 | rawToken;
-                    return new MDToken(rawToken);
-                }
+                rawToken = 0x70 << 24 | rawToken;
+                return new MDToken(rawToken);
             }
             lenght -= (uint)(usReader.Position - pos);
             rawToken++;
@@ -160,4 +154,40 @@ static partial class Utils
         return null;
     }
 
+    private static string ReadUserStringHeap(this ref DataReader reader)
+    {
+        // https://github.com/dotnet/runtime/blob/3b91ac601980f3cc35e1d8687e7235e874ffc8ea/src/libraries/System.Reflection.Metadata/src/System/Reflection/Metadata/Internal/UserStringHeap.cs#L27
+        int strLen = (int)(reader.ReadCompressedUInt32() & ~1);
+        if (strLen < 1)
+        {
+            return string.Empty;
+        }
+        string str = reader.ReadString(strLen, Encoding.Unicode);
+        byte terminator = reader.ReadByte();
+        if (terminator != GetStringTerminalByte(str))
+        {
+            throw new Exception("Unexpected byte found in user string heap terminator");
+        }
+        return str;
+
+        // ECMA 335 - II.24.2.4
+        static byte GetStringTerminalByte(string str)
+        {
+            foreach (char c in str)
+            {
+                if (c >> 8 != 0)
+                {
+                    return 0x01;
+                }
+                byte low = (byte)(c & 0xFF);
+                if ((low >= 0x01 && low <= 0x08) ||
+                    (low >= 0x0E && low <= 0x1F) ||
+                    low == 0x27 || low == 0x2D || low == 0x7F)
+                {
+                    return 0x01;
+                }
+            }
+            return 0x00;
+        }
+    }
 }
