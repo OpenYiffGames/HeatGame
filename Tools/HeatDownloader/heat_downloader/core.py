@@ -10,7 +10,7 @@ RELEASE_KEYWORDS = [
     'heat', 'milestone', 'test', 'build'
 ]
 ARTIFACT_NAMES = [
-    'Anthro {v} Heat', 'Heat {v}', 'Anthro Heat {v} Milestone'
+    'Anthro Heat {v}', 'Heat {v}', 'Anthro Heat {v} Milestone'
 ]
 ARTIFACT_NAMES_SUFFIXES = [
     '.7z', '.zip', '.rar'
