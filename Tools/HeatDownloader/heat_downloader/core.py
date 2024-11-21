@@ -60,6 +60,8 @@ def find_heat_releases() -> Generator[tuple[str, str], None, None]:
         titles = [post.attributes.title for post in posts]
         titles = filter(_filter_release_post_name, titles)
         for version in iter((_get_version_from_title(title), title) for title in titles):
+            if version[0] is None:
+                continue
             yield version
 
         query_filter.page = page.meta.pagination.cursors
