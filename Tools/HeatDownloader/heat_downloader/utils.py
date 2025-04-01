@@ -17,3 +17,6 @@ def print_success(message):
 
 def print_info(message):
     print(bcolors.OKBLUE + "[INFO] " + message + bcolors.ENDC)
+
+def print_warning(message):
+    print(bcolors.WARNING + "[WARNING] " + message + bcolors.ENDC)

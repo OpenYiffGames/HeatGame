@@ -1,7 +1,7 @@
 from tqdm import tqdm
 import requests
 import os
-import time
+from time import sleep as time_sleep
 
 from heat_downloader import find_heat_releases, try_find_artifact
 import heat_downloader.utils as utils
@@ -28,15 +28,15 @@ def download_latest_heat_release(output_dir: str):
         if version:
             utils.print_info(f'Found release version: {version}\n\tTitle: {title}')
             file_uri = try_find_artifact(version)
-            file_name = os.path.basename(file_uri)
-            output_dir = os.path.join(output_dir, file_name)
             if file_uri:
+                file_name = os.path.basename(file_uri)
+                output_dir = os.path.join(output_dir, file_name)
                 _download_artifact(file_uri, output_dir)
                 utils.print_success(f'Artifact downloaded: {output_dir}')
                 return
             else:
-                time.sleep(1)
-                utils.print_info(f'Artifact for version: {version} not found!')
+                time_sleep(1) # Avoid rate limiting
+                utils.print_warning(f'Artifact for version: {version} not found!')
     utils.print_error('No artifact found for any release version')
 
 def download_heat_release_version(output_dir: str, version: str):
