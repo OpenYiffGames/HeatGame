@@ -113,7 +113,7 @@ internal class Program
 ");
 
         Console.ForegroundColor = ConsoleColor.White;
-        Console.WriteLine("Sorry for the inconvenience, but the gane could not be patched.");
+        Console.WriteLine("Sorry for the inconvenience, but the game could not be patched.");
         Console.WriteLine("If you believe this is an error, please open an issue at:");
         Console.ForegroundColor = ConsoleColor.Blue;
         Console.WriteLine("https://github.com/OpenYiffGames/HeatGame/issues");
