@@ -2,6 +2,7 @@ from .patreon_api import ApiFilter, fetch_patreon_posts, filter_patreon_posts
 import re
 import requests
 import heat_downloader.utils as utils
+from time import sleep as time_sleep
 
 
 HEAT_CAMPAIGN_ID = 4451021
@@ -37,6 +38,7 @@ def try_find_artifact(version: str) -> str|None:
             file_uri = f'{ARTIFACT_SERVER}{artifact_name}{suffix}'
             file_exits = requests.head(file_uri).status_code == 200
             if not file_exits:
+                time_sleep(1) # Avoid rate limiting
                 continue
             utils.print_info(f'Artifact found: {file_uri}')
             return file_uri
