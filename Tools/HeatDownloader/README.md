@@ -10,21 +10,21 @@ This CLI tool allows you to download the latest build of heat. It is a simple pa
 - Go to the `HeatDownloader` directory located in `Tools/HeatDownloader`. (Where we are now)
 - Have **python 3.10** or newer
 - Install the package using `pip install -e .`
-- Or use one of the instalation scripts: `setup-windows.cmd` [*legacy*] or `setup-windows.ps1` [**recomended**] 
+- Or use one of the installation scripts: `setup-windows.cmd` [*legacy*] or `setup-windows.ps1` [**recommended**]
 
 ### Automatic (git and script) - [_**recommended if you are naive to python**_]
 #### Powershell or windows terminal:
 ```bash
 # on powershell or windows terminal type:
-git clone git clone https://github.com/OpenYiffGames/HeatGame.git
-cd HeatGame/tools/HeatDownloader
+git clone https://github.com/OpenYiffGames/HeatGame.git
+cd HeatGame/Tools/HeatDownloader
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\setup-windows.ps1
 ```
 #### Legacy CMD
-```
-git clone git clone https://github.com/OpenYiffGames/HeatGame.git
-cd HeatGame/tools/HeatDownloader
+```bash
+git clone https://github.com/OpenYiffGames/HeatGame.git
+cd HeatGame/Tools/HeatDownloader
 setup-windows.cmd
 ```
 
@@ -44,7 +44,7 @@ py -m pip install .
 
 ## How to use it
 
-After a succefull installation you can execute it using as a module with `python -m heat_downloader` command or if your enviroment is setup correctly you can just execute `heat-downloader` on your terminal. (This last option requires your python's scripts directory to be on PATH)
+After a successful installation you can execute it as a module with `python -m heat_downloader` or, if your environment is set up correctly, simply run `heat-downloader`. (This requires your Python Scripts directory on PATH.)
 
 ### Commands:
 `-h` - shows help message \
@@ -53,7 +53,7 @@ After a succefull installation you can execute it using as a module with `python
 
 ### Examples:
 
-#### Downloding
+#### Downloading
 ```bash
 # Download last version to directory
 heat-downloader download --output my-download-directory/
@@ -77,8 +77,8 @@ heat-downloader list 5
 https://github.com/user-attachments/assets/0d669474-6797-41ff-bd2b-8259bcb63813
 
 ## Prebuilt binaries
-If you are too lazy to install the module, you can check the [release session](https://github.com/OpenYiffGames/HeatGame/releases) where we have a single .exe packed with [PyInstaller](https://github.com/pyinstaller/pyinstaller).
-Keep in mind that these binaries are auto-generated, please open an issue if you have any problems.\
+If you’re too lazy to install the module, check the [releases section](https://github.com/OpenYiffGames/HeatGame/releases) for a single .exe packed with [PyInstaller](https://github.com/pyinstaller/pyinstaller).  
+Keep in mind these binaries are auto-generated. Please open an issue if you have any problems.
 
-- [Lateted Version](https://github.com/OpenYiffGames/HeatGame/releases/latest/download/tools.zip)
+- [Latest Version](https://github.com/OpenYiffGames/HeatGame/releases/latest/download/tools.zip)
 
