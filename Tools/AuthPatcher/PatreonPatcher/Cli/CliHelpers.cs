@@ -71,7 +71,7 @@ static class CliHelpers
                                                  __/ |                                                      __/ |
                                                 |___/                                                      |___/ 
 ", ConsoleColor.Red);
-        console.WriteLine("Sorry for the inconvenience, but the gane could not be patched.");
+        console.WriteLine("Sorry for the inconvenience, but the game could not be patched.");
         console.WriteLine("If you believe this is an error, please open an issue at:");
         console.WriteLine("https://github.com/OpenYiffGames/HeatGame/issues", ConsoleColor.Blue);
     }
