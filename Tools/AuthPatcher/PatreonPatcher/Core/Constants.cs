@@ -1,4 +1,4 @@
-﻿namespace PatreonPatcher;
+﻿namespace PatreonPatcher.Core;
 
 internal class Constants
 {

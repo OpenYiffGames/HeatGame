@@ -1,7 +1,6 @@
-﻿
-namespace PatreonPatcher;
+﻿namespace PatreonPatcher.Core;
 
-static class Logger
+internal static class Logger
 {
     public static ILoggerWriter Writer { get; set; } = new ConsoleLogger();
 
@@ -9,9 +8,20 @@ static class Logger
     {
         Writer.Write(level, message);
     }
-    public static void Info(string message) => Log(LogLevel.Info, message);
-    public static void Warning(string message) => Log(LogLevel.Warning, message);
-    public static void Error(string message) => Log(LogLevel.Error, message);
+    public static void Info(string message)
+    {
+        Log(LogLevel.Info, message);
+    }
+
+    public static void Warning(string message)
+    {
+        Log(LogLevel.Warning, message);
+    }
+
+    public static void Error(string message)
+    {
+        Log(LogLevel.Error, message);
+    }
 
     public interface ILoggerWriter
     {
@@ -29,7 +39,7 @@ static class Logger
 
         public void Write(LogLevel level, string message)
         {
-            var color = Console.ForegroundColor;
+            ConsoleColor color = Console.ForegroundColor;
             Console.ForegroundColor = Colors[level];
             Console.WriteLine($"[{level}] {message}");
             Console.ForegroundColor = color;

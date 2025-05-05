@@ -1,9 +1,9 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace PatreonPatcher;
+namespace PatreonPatcher.Core;
 
 [StructLayout(LayoutKind.Explicit)]
-struct IMAGE_COR_ILMETHOD
+internal struct IMAGE_COR_ILMETHOD
 {
     [FieldOffset(0)] public byte Tiny_Flags_CodeSize;
 

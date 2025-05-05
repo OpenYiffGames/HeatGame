@@ -1,6 +1,6 @@
-﻿namespace PatreonPatcher;
+﻿namespace PatreonPatcher.Core;
 
-abstract class IPatchVersion : IEquatable<IPatchVersion>
+internal abstract class IPatchVersion : IEquatable<IPatchVersion>
 {
     public abstract Guid Id { get; }
     public abstract int Minor { get; }
@@ -9,11 +9,7 @@ abstract class IPatchVersion : IEquatable<IPatchVersion>
 
     public virtual bool Equals(IPatchVersion? other)
     {
-        if (other is null)
-        {
-            return false;
-        }
-        return other.GetHashCode() == GetHashCode();
+        return other is not null && other.GetHashCode() == GetHashCode();
     }
 
     public override int GetHashCode()

@@ -1,17 +1,17 @@
-﻿namespace PatreonPatcher;
+﻿namespace PatreonPatcher.Core;
 
-class PatternScanner
+internal class PatternScanner
 {
     private readonly ushort[] pattern;
 
     public PatternScanner(string pattern)
     {
-        var tokens = pattern.Split(' ');
+        string[] tokens = pattern.Split(' ');
         this.pattern = new ushort[tokens.Length];
 
         for (int i = 0; i < tokens.Length; i++)
         {
-            var token = tokens[i];
+            string token = tokens[i];
             ushort value;
             if (token == "??")
             {
@@ -61,7 +61,7 @@ class PatternScanner
         {
             return false;
         }
-        foreach (var c in span)
+        foreach (char c in span)
         {
             if (!char.IsAsciiHexDigit(c))
             {
