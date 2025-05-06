@@ -1,6 +1,6 @@
 ﻿using dnlib.DotNet;
 
-namespace PatreonPatcher;
+namespace PatreonPatcher.Core;
 
 internal partial class PatchVersionAttribute : IPatchVersion
 {
@@ -36,14 +36,14 @@ internal partial class PatchVersionAttribute : IPatchVersion
 
     public static CustomAttribute Create(ModuleDef module, string patchId, int major, int minor, int patch)
     {
-        var attributeRef = new TypeRefUser(module, Constants.PatchAttributeNamespace, Constants.PatchAttributeTypeName);
-        var typeDef = attributeRef.Resolve();
+        TypeRefUser attributeRef = new(module, Constants.PatchAttributeNamespace, Constants.PatchAttributeTypeName);
+        TypeDef? typeDef = attributeRef.Resolve();
         if (typeDef is null)
         {
-            var builder = new Builder(module);
+            Builder builder = new(module);
             typeDef = builder.CreateAttributeType();
         }
-        var ctor = typeDef.FindConstructors().First();
+        MethodDef ctor = typeDef.FindConstructors().First();
         return Create(ctor, module, patchId, major, minor, patch);
     }
 

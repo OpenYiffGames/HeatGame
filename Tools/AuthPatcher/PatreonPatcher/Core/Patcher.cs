@@ -1,10 +1,11 @@
 ﻿using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.PE;
-using PatreonPatcher.Helpers;
+using PatreonPatcher.Core.Helpers;
+using PatreonPatcher.Core.Logging;
 using System.Diagnostics.CodeAnalysis;
 
-namespace PatreonPatcher;
+namespace PatreonPatcher.Core;
 
 internal class Patcher
 {
@@ -14,10 +15,10 @@ internal class Patcher
     private readonly string _assembliesPath;
 
     private bool _methodsLoaded = false;
-    MethodDef? _writeAuthFunction;
-    MethodDef? _invokeSuccessFunction;
-    MethodDef? _bypassAuthFunction;
-    MethodDef? _awakeFunction;
+    private MethodDef? _writeAuthFunction;
+    private MethodDef? _invokeSuccessFunction;
+    private MethodDef? _bypassAuthFunction;
+    private MethodDef? _awakeFunction;
 
     private Patcher(string assembliesPath, ModuleContext moduleContext)
     {
@@ -30,13 +31,13 @@ internal class Patcher
     {
         if (!LoadMethods())
         {
-            Logger.Error("Failed to load methods.");
+            Log.Error("Failed to load methods.");
             return false;
         }
 
         if (IsPatched())
         {
-            Logger.Info("Game already patched.");
+            Log.Info("Game already patched.");
             return true;
         }
 
@@ -47,13 +48,13 @@ internal class Patcher
             OpCodes.Ret.ToInstruction()
         ];
 
-        var awakeIlCode = new LinkedList<Instruction>(_awakeFunction!.Body.Instructions);
-        var ip = awakeIlCode.First;
+        LinkedList<Instruction> awakeIlCode = new(_awakeFunction!.Body.Instructions);
+        LinkedListNode<Instruction>? ip = awakeIlCode.First;
         while (ip != null)
         {
             if (ip.Value.OpCode == OpCodes.Ret)
             {
-                Logger.Info($"Patching ret instruction at {_awakeFunction.RVA:X}[{ip.Value.GetOffset():X}]");
+                Log.Info($"Patching ret instruction at {_awakeFunction.RVA:X}[{ip.Value.GetOffset():X}]");
                 AddInstructionsAfter(ip.Previous!, callBypassAuth);
                 awakeIlCode.Remove(ip);
                 break;
@@ -61,37 +62,37 @@ internal class Patcher
             ip = ip.Next;
             void AddInstructionsAfter(LinkedListNode<Instruction> target, Instruction[] instructions)
             {
-                foreach (var instr in instructions)
+                foreach (Instruction instr in instructions)
                 {
-                    awakeIlCode.AddAfter(target, instr);
+                    _ = awakeIlCode.AddAfter(target, instr);
                     target = target.Next!;
                 }
             }
         }
         _awakeFunction.Body.Instructions.Clear();
-        foreach (var instr in awakeIlCode)
+        foreach (Instruction instr in awakeIlCode)
         {
             _awakeFunction.Body.Instructions.Add(instr);
         }
 
-        var assembly = _writeAuthFunction!.DeclaringType.DefinitionAssembly as AssemblyDef
+        AssemblyDef assembly = _writeAuthFunction!.DeclaringType.DefinitionAssembly as AssemblyDef
             ?? throw new Exception("Failed to get auth assembly");
 
-        var attb = PatchVersionAttribute.Create(assembly.ManifestModule, patchId.ToString(), 0, 0, 0);
+        CustomAttribute attb = PatchVersionAttribute.Create(assembly.ManifestModule, patchId.ToString(), 0, 0, 0);
         assembly.CustomAttributes.Add(attb);
 
-        var assemblyName = assembly.Name + ".dll";
+        string assemblyName = assembly.Name + ".dll";
 
-        var assemblyPath = GetAssemblyPath(assemblyName);
+        string assemblyPath = GetAssemblyPath(assemblyName);
         File.Move(assemblyPath, assemblyPath + ".bak");
         try
         {
-            Logger.Info($"Writing patched assembly to {assemblyPath}");
+            Log.Info($"Writing patched assembly to {assemblyPath}");
             await Task.Run(() => assembly.Write(assemblyPath));
         }
         catch (Exception)
         {
-            Logger.Error("Failed to write patched assembly. Restoring backup.");
+            Log.Error("Failed to write patched assembly. Restoring backup.");
             File.Move(assemblyPath + ".bak", assemblyPath);
             throw;
         }
@@ -104,19 +105,20 @@ internal class Patcher
         {
             return true;
         }
+        Log.Debug($"Loading methods from {_assembliesPath}");
 
-        var modules = Directory.GetFiles(_assembliesPath, "*.dll");
-        Logger.Info($"Found {modules.Length} assemblies in {_assembliesPath}");
+        string[] modules = Directory.GetFiles(_assembliesPath, "*.dll");
+        Log.Info($"Found {modules.Length} assemblies in {_assembliesPath}");
 
         Stream? authAssemblyStream = null;
         MethodDef? invokeSuccessMethod = null;
-        var options = new ParallelOptions()
+        ParallelOptions options = new()
         {
             MaxDegreeOfParallelism = 2
         };
-        Parallel.ForEach(modules, options, (modulePath, loop) =>
+        _ = Parallel.ForEach(modules, options, (modulePath, loop) =>
         {
-            var assembly = OpenAssembly(modulePath);
+            Stream assembly = OpenAssembly(modulePath);
 
             int? rva = Utils.Pattern.FindMethodRVAMatchingPattern(assembly, Constants.Patterns.InvokeSuccessFunction);
             if (rva is null)
@@ -125,8 +127,8 @@ internal class Patcher
                 return;
             }
 
-            var assemblyDef = AssemblyDef.Load(assembly, _context);
-            var methodDef = assemblyDef.ManifestModule
+            AssemblyDef assemblyDef = AssemblyDef.Load(assembly, _context);
+            MethodDef methodDef = assemblyDef.ManifestModule
                 .GetTypes()
                 .SelectMany(x => x.Methods)
                 .Single(x => x.RVA == (RVA)rva.Value);
@@ -138,7 +140,7 @@ internal class Patcher
                     invokeSuccessMethod = methodDef;
                     authAssemblyStream = assembly;
                     loop.Break();
-                    Logger.Info($"Found {invokeSuccessMethod.FullName} at {invokeSuccessMethod.RVA:X}");
+                    Log.Info($"Found {invokeSuccessMethod.FullName} at {invokeSuccessMethod.RVA:X}");
                 }
                 else
                 {
@@ -149,48 +151,47 @@ internal class Patcher
 
         if (invokeSuccessMethod is null || authAssemblyStream is null)
         {
-            Logger.Error("Failed to find InvokeSuccessFunction");
+            Log.Error("Failed to find InvokeSuccessFunction");
             return false;
         }
-        var authType = invokeSuccessMethod.DeclaringType;
-        var authAssembly = authType.DefinitionAssembly as AssemblyDef;
+        TypeDef authType = invokeSuccessMethod.DeclaringType;
+        AssemblyDef? authAssembly = authType.DefinitionAssembly as AssemblyDef;
 
-        uint playerPrefsHasKeyToken = Utils.FindMethodRefToken(
-            authAssembly!,
+        uint playerPrefsHasKeyToken = authAssembly!.FindMethodRefToken(
             Constants.UnityEngineTypes.PlayerPrefs,
             Constants.UnityEngineTypes.PlayerPrefs_HasKey)!.Value.Raw;
-        Logger.Info($"Found PlayerPrefs.HasKey token: {playerPrefsHasKeyToken:X}");
+        Log.Info($"Found PlayerPrefs.HasKey token: {playerPrefsHasKeyToken:X}");
 
-        var hwidStringToken = Utils.FindUserStringToken(authAssembly!, "HWID")!.Value.Raw;
-        Logger.Info($"Found HWID string token: {hwidStringToken:X}");
+        uint hwidStringToken = authAssembly!.FindUserStringToken("HWID")!.Value.Raw;
+        Log.Info($"Found HWID string token: {hwidStringToken:X}");
 
-        var patternBuilder = new PatternBuilder(Constants.Patterns.WriteAuthFunction);
+        PatternBuilder patternBuilder = new(Constants.Patterns.WriteAuthFunction);
         string writeAuthPattern = patternBuilder.Render(new Dictionary<string, object?>()
         {
             { "token", Utils.SwapEndianness(playerPrefsHasKeyToken) },
             { "string_token", Utils.SwapEndianness(hwidStringToken) }
         });
-        var writeAuthMethod = Utils.Pattern.FindTypeMethodMatchingPattern(authAssemblyStream, authType, writeAuthPattern);
+        MethodDef? writeAuthMethod = Utils.Pattern.FindTypeMethodMatchingPattern(authAssemblyStream, authType, writeAuthPattern);
         if (writeAuthMethod is null)
         {
-            Logger.Error("Failed to find WriteAuthFunction");
+            Log.Error("Failed to find WriteAuthFunction");
             authAssemblyStream.Dispose();
             return false;
         }
-        Logger.Info($"Found {writeAuthMethod.FullName} at {writeAuthMethod.RVA:X}");
+        Log.Info($"Found {writeAuthMethod.FullName} at {writeAuthMethod.RVA:X}");
 
-        var awakeMethod = authType.FindMethod(Constants.UnityEngineTypes.MonoBehaviour_Awake);
+        MethodDef? awakeMethod = authType.FindMethod(Constants.UnityEngineTypes.MonoBehaviour_Awake);
         if (awakeMethod is null)
         {
-            Logger.Error("Failed to find Awake method");
+            Log.Error("Failed to find Awake method");
             return false;
         }
-        Logger.Info($"Found {awakeMethod.FullName} at {awakeMethod.RVA:X}");
+        Log.Info($"Found {awakeMethod.FullName} at {awakeMethod.RVA:X}");
 
-        var bypassAuthFunctions = Utils.Pattern.FindTypeMethodsMatchingPattern(authAssemblyStream, authType, Constants.Patterns.BypassAuthFunction);
+        MethodDef[] bypassAuthFunctions = Utils.Pattern.FindTypeMethodsMatchingPattern(authAssemblyStream, authType, Constants.Patterns.BypassAuthFunction);
         if (bypassAuthFunctions.Length == 0)
         {
-            Logger.Error("Failed to find BypassAuthFunction");
+            Log.Error("Failed to find BypassAuthFunction");
             authAssemblyStream.Dispose();
             return false;
         }
@@ -199,9 +200,9 @@ internal class Patcher
         authAssemblyStream.Dispose();
 
         MethodDef? bypassAuthMethod = null;
-        foreach (var method in bypassAuthFunctions)
+        foreach (MethodDef method in bypassAuthFunctions)
         {
-            var isCorrectMethod = method.Body.Instructions
+            bool isCorrectMethod = method.Body.Instructions
                 .Where(x => x.OpCode == OpCodes.Call &&
                     x.Operand is IMethodDefOrRef)
                 .Select(x => (x.Operand as IMethodDefOrRef).ResolveMethodDef())
@@ -211,17 +212,18 @@ internal class Patcher
             if (isCorrectMethod)
             {
                 bypassAuthMethod = method;
-                Logger.Info($"Found {bypassAuthMethod.FullName} at {bypassAuthMethod.RVA:X}");
+                Log.Info($"Found {bypassAuthMethod.FullName} at {bypassAuthMethod.RVA:X}");
                 break;
             }
         }
 
         if (bypassAuthMethod is null)
         {
-            Logger.Error("Failed to find BypassAuthFunction");
+            Log.Error("Failed to find BypassAuthFunction");
             return false;
         }
 
+        Log.Debug("Methods loaded successfully");
         _writeAuthFunction = writeAuthMethod;
         _invokeSuccessFunction = invokeSuccessMethod;
         _bypassAuthFunction = bypassAuthMethod;
@@ -233,18 +235,23 @@ internal class Patcher
     [RequiresDynamicCode("Calls PatreonPatcher.src.Patcher.LoadMethods()")]
     private bool IsPatched()
     {
+        Log.Debug("Checking if game is patched");
         if (!_methodsLoaded && !LoadMethods())
         {
-            Logger.Error("Failed to load methods.");
+            Log.Error("Failed to load methods.");
             return false;
         }
 
         if (_writeAuthFunction!.DeclaringType.DefinitionAssembly is not AssemblyDef assembly)
         {
-            Logger.Error("Failed to get AssemblyDef from the auth assembly");
+            Log.Error("Failed to get AssemblyDef from the auth assembly");
             return false;
         }
-        var version = PatchVersionAttribute.GetPatchVersion(assembly, patchId);
+        IPatchVersion? version = PatchVersionAttribute.GetPatchVersion(assembly, patchId);
+        if (version is not null)
+        {
+            Log.Debug($"Game is patched with version {version.Major}.{version.Minor}.{version.Patch}");
+        }
         return version != null;
     }
 
@@ -253,13 +260,13 @@ internal class Patcher
         return Path.Combine(_assembliesPath, assemblyName);
     }
 
-    private Stream OpenAssembly(string assemblyName)
+    private FileStream OpenAssembly(string assemblyName)
     {
         if (!Path.IsPathFullyQualified(assemblyName))
         {
             assemblyName = GetAssemblyPath(assemblyName);
         }
-        var fs = new FileStream(assemblyName, FileMode.Open, FileAccess.Read, FileShare.Read);
+        FileStream fs = new(assemblyName, FileMode.Open, FileAccess.Read, FileShare.Read);
         return fs;
     }
 
@@ -273,20 +280,20 @@ internal class Patcher
         string gameBaseDirectory = Path.GetDirectoryName(gameExecutable)!;
         string exeName = Path.GetFileNameWithoutExtension(gameExecutable);
 
-        var assembliesDirectory = Path.Combine(gameBaseDirectory, exeName + Constants.Directories.AssembliesDirectory);
+        string assembliesDirectory = Path.Combine(gameBaseDirectory, exeName + Constants.Directories.AssembliesDirectory);
         if (!Directory.Exists(assembliesDirectory))
         {
             throw new DirectoryNotFoundException($"Assemblies directory not found at {assembliesDirectory}");
         }
 
-        var unityEngineAssemblyPath = Path.Combine(assembliesDirectory, Constants.UnityEngineAssembly);
+        string unityEngineAssemblyPath = Path.Combine(assembliesDirectory, Constants.UnityEngineAssembly);
         if (!File.Exists(unityEngineAssemblyPath))
         {
             throw new FileNotFoundException($"UnityEngine assembly not found at {unityEngineAssemblyPath}");
         }
 
-        var resolver = new LocalPathAssemblyResolver(assembliesDirectory);
-        var moduleContext = new ModuleContext(resolver);
+        LocalPathAssemblyResolver resolver = new(assembliesDirectory);
+        ModuleContext moduleContext = new(resolver);
 
         return new Patcher(assembliesDirectory, moduleContext);
     }

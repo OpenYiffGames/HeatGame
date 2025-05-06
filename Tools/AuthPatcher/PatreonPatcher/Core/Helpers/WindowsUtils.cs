@@ -1,12 +1,12 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace PatreonPatcher.Helpers;
+namespace PatreonPatcher.Core.Helpers;
 
-static class WindowsUtils
+internal static class WindowsUtils
 {
     public static string? ShowOpenFileDialog(string filter)
     {
-        var ofn = new WindowsNative.OPENFILENAMEA
+        WindowsNative.OPENFILENAMEA ofn = new()
         {
             lStructSize = (uint)Marshal.SizeOf<WindowsNative.OPENFILENAMEA>(),
             lpstrFilter = filter,
@@ -16,12 +16,7 @@ static class WindowsUtils
             Flags = 0x00000008 | 0x00080000 | 0x00001000
         };
 
-        if (WindowsNative.GetOpenFileNameA(ref ofn))
-        {
-            return ofn.lpstrFile;
-        }
-
-        return null;
+        return WindowsNative.GetOpenFileNameA(ref ofn) ? ofn.lpstrFile : null;
     }
 
     public static string? ShowOpenFileDialog()
@@ -31,6 +26,6 @@ static class WindowsUtils
 
     public static bool ShowOkCancelMessageBox(string message, string caption)
     {
-        return WindowsNative.MessageBoxA(IntPtr.Zero, message, caption, 0x00000001 | 0x00000020) == 1;
+        return WindowsNative.MessageBoxA(nint.Zero, message, caption, 0x00000001 | 0x00000020) == 1;
     }
 }

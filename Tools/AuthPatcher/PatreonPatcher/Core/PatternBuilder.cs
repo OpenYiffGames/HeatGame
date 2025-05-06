@@ -6,32 +6,32 @@ using System.Text.RegularExpressions;
 
 namespace PatreonPatcher;
 
-partial class PatternBuilder
+internal partial class PatternBuilder
 {
-    readonly StringBuilder _builder = new();
-    readonly HashSet<string> symbols = [];
+    private readonly StringBuilder _builder = new();
+    private readonly HashSet<string> symbols = [];
 
     public PatternBuilder(string pattern)
     {
-        var matches = TemplateRegex.Matches(pattern);
+        MatchCollection matches = TemplateRegex.Matches(pattern);
         for (int i = 0; i < matches.Count; i++)
         {
-            var match = matches[i];
-            var name = match.Groups["name"].Value;
-            symbols.Add(name);
+            Match match = matches[i];
+            string name = match.Groups["name"].Value;
+            _ = symbols.Add(name);
         }
-        _builder.Append(pattern);
-        _builder.Replace(" ", "");
+        _ = _builder.Append(pattern);
+        _ = _builder.Replace(" ", "");
     }
 
     [RequiresUnreferencedCode("This method uses reflection to get property values from the object")]
     public string Render(object? obj)
     {
-        var symbolValues = new Dictionary<string, object?>();
-        foreach (var symbol in symbols)
+        Dictionary<string, object?> symbolValues = [];
+        foreach (string symbol in symbols)
         {
             ArgumentNullException.ThrowIfNull(obj);
-            var value = (obj.GetType().GetProperty(symbol)?.GetValue(obj))
+            object value = (obj.GetType().GetProperty(symbol)?.GetValue(obj))
                 ?? throw new ArgumentException($"Missing value for symbol '{symbol}'");
             symbolValues[symbol] = value;
         }
@@ -40,9 +40,9 @@ partial class PatternBuilder
 
     public string Render(Dictionary<string, object?> values)
     {
-        foreach (var symbol in symbols)
+        foreach (string symbol in symbols)
         {
-            if (!values.TryGetValue(symbol, out var value))
+            if (!values.TryGetValue(symbol, out object? value))
             {
                 throw new ArgumentException($"Missing value for symbol '{symbol}'");
             }
@@ -60,23 +60,30 @@ partial class PatternBuilder
                 string s => s,
                 _ => throw new ArgumentException($"Invalid value type for symbol '{symbol}'")
             };
-            static string Align(string value) => value.Length % 2 == 0 ? value : "0" + value;
-            _builder.Replace($"{{{symbol}}}", Align(formatedValue));
+            static string Align(string value)
+            {
+                return value.Length % 2 == 0 ? value : "0" + value;
+            }
+
+            _ = _builder.Replace($"{{{symbol}}}", Align(formatedValue));
         }
         return FormatPattern(_builder);
     }
 
-    public string Render() => Render([]);
+    public string Render()
+    {
+        return Render([]);
+    }
 
     public PatternBuilder Write<T>(T value) where T : INumber<T>
     {
-        _builder.Append(value.ToString("X", new NumberFormatInfo()));
+        _ = _builder.Append(value.ToString("X", new NumberFormatInfo()));
         return this;
     }
 
     public PatternBuilder WriteWildCard()
     {
-        _builder.Append("??");
+        _ = _builder.Append("??");
         return this;
     }
 
@@ -85,7 +92,7 @@ partial class PatternBuilder
         int start = Math.Min(@string.Length, 2);
         for (int i = start; i < @string.Length; i += 3)
         {
-            @string.Insert(i, ' ');
+            _ = @string.Insert(i, ' ');
         }
         return @string.ToString();
     }

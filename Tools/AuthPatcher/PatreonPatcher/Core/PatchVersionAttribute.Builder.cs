@@ -1,11 +1,11 @@
 ﻿using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
-namespace PatreonPatcher;
+namespace PatreonPatcher.Core;
 
 internal partial class PatchVersionAttribute
 {
-    class Builder
+    private class Builder
     {
         private readonly ModuleDef module;
 
@@ -30,11 +30,11 @@ internal partial class PatchVersionAttribute
 
         private void BuildAttributeType()
         {
-            var attrbBaseType = module.CorLibTypes.GetTypeRef(nameof(System), nameof(Attribute));
+            TypeRef attrbBaseType = module.CorLibTypes.GetTypeRef(nameof(System), nameof(Attribute));
             if (!module.GetTypeRefs()
                 .Any(x => x.ReflectionFullName == attrbBaseType.ReflectionFullName))
             {
-                module.Import(attrbBaseType);
+                _ = module.Import(attrbBaseType);
             }
 
             patchedAttbType = new TypeDefUser(Constants.PatchAttributeNamespace, Constants.PatchAttributeTypeName, module.CorLibTypes.Object.TypeDefOrRef)
@@ -64,11 +64,11 @@ internal partial class PatchVersionAttribute
             {
                 throw new InvalidOperationException("Attribute type is not created yet");
             }
-            var attrbBaseType = module.CorLibTypes.GetTypeRef(nameof(System), nameof(Attribute));
-            var attibuteCtor = new MemberRefUser(module, ".ctor", MethodSig.CreateInstance(module.CorLibTypes.Void), attrbBaseType);
+            TypeRef attrbBaseType = module.CorLibTypes.GetTypeRef(nameof(System), nameof(Attribute));
+            MemberRefUser attibuteCtor = new(module, ".ctor", MethodSig.CreateInstance(module.CorLibTypes.Void), attrbBaseType);
 
-            var ctorArgs = new[] { module.CorLibTypes.String, module.CorLibTypes.Int32, module.CorLibTypes.Int32, module.CorLibTypes.Int32 };
-            var patchedAttbCtor = new MethodDefUser(".ctor", MethodSig.CreateInstance(module.CorLibTypes.Void, ctorArgs),
+            CorLibTypeSig[] ctorArgs = new[] { module.CorLibTypes.String, module.CorLibTypes.Int32, module.CorLibTypes.Int32, module.CorLibTypes.Int32 };
+            MethodDefUser patchedAttbCtor = new(".ctor", MethodSig.CreateInstance(module.CorLibTypes.Void, ctorArgs),
                 MethodImplAttributes.IL | MethodImplAttributes.Managed,
                 MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName | MethodAttributes.ReuseSlot)
             {
@@ -95,11 +95,14 @@ internal partial class PatchVersionAttribute
             patchedAttbType.Methods.Add(patchedAttbCtor);
         }
 
-        private static string GetBackingFieldName(string propertyName) => $"<{propertyName}>k__BackingField";
+        private static string GetBackingFieldName(string propertyName)
+        {
+            return $"<{propertyName}>k__BackingField";
+        }
 
         private static FieldDefUser CreateBackingField(string name, TypeDefUser type, CorLibTypeSig fieldSiginature)
         {
-            var field = new FieldDefUser(GetBackingFieldName(name), new FieldSig(fieldSiginature), FieldAttributes.Private | FieldAttributes.InitOnly);
+            FieldDefUser field = new(GetBackingFieldName(name), new FieldSig(fieldSiginature), FieldAttributes.Private | FieldAttributes.InitOnly);
             type.Fields.Add(field);
             return field;
         }
@@ -107,7 +110,7 @@ internal partial class PatchVersionAttribute
         private static void CreateProperty(string name, TypeDefUser type, CorLibTypeSig propertySignature, ref FieldDefUser? backingField)
         {
             backingField ??= CreateBackingField(name, type, propertySignature);
-            var property = new PropertyDefUser(name, new PropertySig(true, propertySignature))
+            PropertyDefUser property = new(name, new PropertySig(true, propertySignature))
             {
                 GetMethod = new MethodDefUser($"get_{name}", MethodSig.CreateInstance(propertySignature), MethodImplAttributes.IL | MethodImplAttributes.Managed,
                 MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.ReuseSlot)
