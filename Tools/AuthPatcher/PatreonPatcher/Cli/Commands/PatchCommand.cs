@@ -1,4 +1,5 @@
 ﻿using PatreonPatcher.Core;
+using PatreonPatcher.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.CommandLine;
@@ -70,15 +71,20 @@ internal class PatchCommand : RootCommand, ICommandHandler
     {
         var gameExecutable = context.ParseResult.GetValueForArgument(gameExecutableArgument)
                 ?? throw new InvalidOperationException("Game executable is null.");
+
+        Log.Debug("running [PatchCommand] Game executable: " + gameExecutable.FullName);
+
         var console = context.Console;
         Patcher patcher = Patcher.Create(gameExecutable.FullName);
         bool ok = await patcher.PatchAsync();
         if (ok)
         {
+            Log.Info("Patch completed successfully.");
             CliHelpers.WriteDoneMessage(console);
         }
         else
         {
+            Log.Error("Patch failed.");
             CliHelpers.WriteErrorMessage(console);
         }
         bool cliMode = context.ParseResult.GetValueForOption(cliModeOption);

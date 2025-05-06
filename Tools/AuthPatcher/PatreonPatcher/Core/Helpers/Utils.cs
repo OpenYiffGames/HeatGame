@@ -72,13 +72,18 @@ internal static partial class Utils
         return methodDef.Module is not ModuleDefMD module ? -1 : (long)module.Metadata.PEImage.ToFileOffset(methodDef.RVA);
     }
 
-    public static string GetLocalStorageDirectory()
+    public static string GetLocalStorageDirectory(bool ensureExists = true)
     {
         Assembly assembly = Assembly.GetExecutingAssembly();
         string assemblyGuid = (assembly.GetCustomAttribute<GuidAttribute>()?.Value) ?? assembly.GetName().FullName;
-        return Path.Combine(
+        var path = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             assemblyGuid);
+        if (ensureExists && !Directory.Exists(path))
+        {
+            Directory.CreateDirectory(path);
+        }
+        return path;
     }
 
     public static AssemblyName GetAssemblyName(Stream peFileS)

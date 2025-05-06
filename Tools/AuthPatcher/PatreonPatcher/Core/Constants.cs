@@ -23,6 +23,8 @@ internal class Constants
         public const string BypassAuthFunction = "02 28 ?? ?? ?? 06 02 28 ?? ?? ?? 06 2A";
     }
 
+    public const string DefaultLogFileName = "Log.txt";
+
     public const string UnityEngineAssembly = "UnityEngine.dll";
     public const string UnityPlayerAssembly = "UnityPlayer.dll";
 

@@ -4,6 +4,7 @@ using System.CommandLine.IO;
 using System.Runtime.InteropServices;
 using PatreonPatcher.Core;
 using PatreonPatcher.Core.Helpers;
+using PatreonPatcher.Core.Logging;
 
 static class CliHelpers
 {
@@ -22,7 +23,7 @@ static class CliHelpers
         // check if OS is windows
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            Logger.Error("This feature is only available on Windows.");
+            Log.Error("This feature is only available on Windows.");
             throw new PlatformNotSupportedException("This feature is only available on Windows.");
         }
         var task = Task.Run(() =>
