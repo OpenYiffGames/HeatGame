@@ -1,16 +1,9 @@
 ﻿using PatreonPatcher.Core;
 using PatreonPatcher.Core.Logging;
-using System;
-using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace PatreonPatcher.Cli.Commands;
 
@@ -40,14 +33,14 @@ internal class PatchCommand : RootCommand, ICommandHandler
         AddOption(cliModeOption);
         AddValidator(CommandValidator);
         Handler = this;
-        
-        var arity = platformID switch
+
+        ArgumentArity arity = platformID switch
         {
             PlatformID.Win32NT => ArgumentArity.ZeroOrOne,
             PlatformID.Unix => ArgumentArity.ExactlyOne,
             _ => ArgumentArity.ExactlyOne
         };
-        var workingDirectory = Environment.CurrentDirectory;
+        string workingDirectory = Environment.CurrentDirectory;
         gameExecutableArgument.Arity = arity;
         gameExecutableArgument.Completions.Add(new DirectoryFilesCompletionSource(new DirectoryInfo(workingDirectory))
         {
@@ -69,12 +62,12 @@ internal class PatchCommand : RootCommand, ICommandHandler
 
     public async Task<int> InvokeAsync(InvocationContext context)
     {
-        var gameExecutable = context.ParseResult.GetValueForArgument(gameExecutableArgument)
+        FileInfo gameExecutable = context.ParseResult.GetValueForArgument(gameExecutableArgument)
                 ?? throw new InvalidOperationException("Game executable is null.");
 
         Log.Debug("running [PatchCommand] Game executable: " + gameExecutable.FullName);
 
-        var console = context.Console;
+        IConsole console = context.Console;
         Patcher patcher = Patcher.Create(gameExecutable.FullName);
         bool ok = await patcher.PatchAsync();
         if (ok)
@@ -97,7 +90,7 @@ internal class PatchCommand : RootCommand, ICommandHandler
 
     private void CommandValidator(CommandResult command)
     {
-        var gameExecutable = command.GetValueForArgument(gameExecutableArgument);
+        FileInfo? gameExecutable = command.GetValueForArgument(gameExecutableArgument);
         if (gameExecutable is null)
         {
             return;
@@ -114,7 +107,7 @@ internal class PatchCommand : RootCommand, ICommandHandler
 
     private int SyncWithAsync(InvocationContext context)
     {
-        var task = InvokeAsync(context);
+        Task<int> task = InvokeAsync(context);
         return task.GetAwaiter().GetResult();
     }
 }

@@ -1,9 +1,4 @@
 ﻿using PatreonPatcher.Core.Logging.Sinks;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PatreonPatcher.Core.Logging;
 
@@ -36,7 +31,7 @@ internal static class LoggerExtensions
 
     public static Logger AddFileLogging(this Logger logger, string filePath, int maxSizeMB = 10, LogLevel logLevel = LogLevel.Info)
     {
-        var fileLogger = new FileLoggerSink(filePath, maxSizeBytes: 1024 * 1024 * maxSizeMB)
+        FileLoggerSink fileLogger = new(filePath, maxSizeBytes: 1024 * 1024 * maxSizeMB)
         {
             LogLevel = logLevel
         };
@@ -46,7 +41,7 @@ internal static class LoggerExtensions
 
     public static Logger AddConsoleLogging(this Logger logger, LogLevel logLevel = LogLevel.Info)
     {
-        var consoleLogger = new ConsoleLoggerSink()
+        ConsoleLoggerSink consoleLogger = new()
         {
             LogLevel = logLevel
         };

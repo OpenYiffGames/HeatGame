@@ -13,14 +13,14 @@ internal sealed class Logger : ILogger, IDisposable
 
     public void RemoveSink(ILoggerSink writer)
     {
-        _writers.Remove(writer);
+        _ = _writers.Remove(writer);
     }
 
     public void RemoveSinksBy(Type loggerType)
     {
-        var writers = _writers.FindAll(w => w.GetType() == loggerType)
+        List<ILoggerSink> writers = _writers.FindAll(w => w.GetType() == loggerType)
             .ToList();
-        foreach (var item in writers)
+        foreach (ILoggerSink? item in writers)
         {
             RemoveSink(item);
         }
@@ -36,9 +36,9 @@ internal sealed class Logger : ILogger, IDisposable
         {
             return;
         }
-        var writers = _writers
+        IEnumerable<ILoggerSink> writers = _writers
             .Where(x => x.LogLevel <= level);
-        foreach (var writer in writers)
+        foreach (ILoggerSink? writer in writers)
         {
             writer.Write(level, message);
         }
@@ -46,7 +46,7 @@ internal sealed class Logger : ILogger, IDisposable
 
     public void Dispose()
     {
-        foreach (var writer in _writers)
+        foreach (ILoggerSink writer in _writers)
         {
             writer.Dispose();
         }

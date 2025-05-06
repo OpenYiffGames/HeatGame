@@ -1,5 +1,4 @@
-﻿using dnlib.DotNet.Pdb;
-using System.Collections;
+﻿using System.Collections;
 using System.Text;
 
 namespace PatreonPatcher.Core.Logging;
@@ -14,15 +13,15 @@ internal static class Log
         {
             if (_logger == null)
             {
-                var logger = new Logger();
-                Interlocked.CompareExchange(ref _logger, logger, null);
+                Logger logger = new();
+                _ = Interlocked.CompareExchange(ref _logger, logger, null);
             }
             return _logger;
         }
         set
         {
             ArgumentNullException.ThrowIfNull(value);
-            Interlocked.Exchange(ref _logger, value);
+            _ = Interlocked.Exchange(ref _logger, value);
         }
     }
 
@@ -96,26 +95,17 @@ internal static class Log
 
     public static string StringifyCollection(ICollection collection)
     {
-        if (collection is IDictionary dictionary)
-        {
-            return StringifyDictionary(dictionary);
-        }
-        else if (collection is IList list)
-        {
-            return StringifyList(list);
-        }
-        else
-        {
-            return StringifyEnumerable(collection);
-        }
+        return collection is IDictionary dictionary
+            ? StringifyDictionary(dictionary)
+            : collection is IList list ? StringifyList(list) : StringifyEnumerable(collection);
     }
 
     public static string StringifyDictionary(IDictionary dictionary)
     {
-        var sb = new StringBuilder();
-        sb.Append('{');
-        StringifyEnumerable(dictionary, sb);
-        sb.Append('}');
+        StringBuilder sb = new();
+        _ = sb.Append('{');
+        _ = StringifyEnumerable(dictionary, sb);
+        _ = sb.Append('}');
         return sb.ToString();
     }
 
@@ -125,10 +115,10 @@ internal static class Log
         {
             return StringifyDictionaryEntry(dictionary);
         }
-        var sb = new StringBuilder();
-        sb.Append('{');
+        StringBuilder sb = new();
+        _ = sb.Append('{');
         StringifyEnumerator(dictionary, sb, (e) => e);
-        sb.Append('}');
+        _ = sb.Append('}');
         return sb.ToString();
     }
 
@@ -138,35 +128,33 @@ internal static class Log
         {
             return StringifyDictionary(dictionary);
         }
-        var sb = new StringBuilder();
-        sb.Append(dictionary.Key);
-        sb.Append(": ");
-        sb.Append(dictionary.Value);
+        StringBuilder sb = new();
+        _ = sb.Append(dictionary.Key);
+        _ = sb.Append(": ");
+        _ = sb.Append(dictionary.Value);
         return sb.ToString();
     }
 
     public static string StringifyList(IList collection)
     {
-        var sb = new StringBuilder();
-        sb.Append('[');
-        StringifyEnumerable(collection, sb);
-        sb.Append(']');
+        StringBuilder sb = new();
+        _ = sb.Append('[');
+        _ = StringifyEnumerable(collection, sb);
+        _ = sb.Append(']');
         return sb.ToString();
     }
 
     public static string StringifyEnumerable(IEnumerable enumerable)
     {
-        var enumerator = enumerable.GetEnumerator();
-        if (enumerator is IDictionaryEnumerator dictionaryEnumerator)
-        {
-            return StringifyEnumerator(dictionaryEnumerator, (e) => e);
-        }
-        return StringifyEnumerator(enumerator);
+        IEnumerator enumerator = enumerable.GetEnumerator();
+        return enumerator is IDictionaryEnumerator dictionaryEnumerator
+            ? StringifyEnumerator(dictionaryEnumerator, (e) => e)
+            : StringifyEnumerator(enumerator);
     }
 
     public static string StringifyEnumerable(IEnumerable enumerable, StringBuilder sb)
     {
-        var enumerator = enumerable.GetEnumerator();
+        IEnumerator enumerator = enumerable.GetEnumerator();
         if (enumerator is IDictionaryEnumerator dictionaryEnumerator)
         {
             StringifyEnumerator(dictionaryEnumerator, sb, (e) => e);
@@ -187,13 +175,13 @@ internal static class Log
 
         if (enumerator.MoveNext())
         {
-            var value = valueGetter(enumerator);
-            sb.Append(Stringify(value));
+            object value = valueGetter(enumerator);
+            _ = sb.Append(Stringify(value));
         }
         while (enumerator.MoveNext())
         {
-            sb.Append(", ");
-            sb.Append(Stringify(valueGetter(enumerator)));
+            _ = sb.Append(", ");
+            _ = sb.Append(Stringify(valueGetter(enumerator)));
         }
     }
 
@@ -201,7 +189,7 @@ internal static class Log
         T enumerator,
         Func<T, object>? valueGetter = null) where T : IEnumerator
     {
-        var sb = new StringBuilder();
+        StringBuilder sb = new();
         StringifyEnumerator(enumerator, sb, valueGetter);
         return sb.ToString();
     }

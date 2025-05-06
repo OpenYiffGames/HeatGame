@@ -33,21 +33,21 @@ internal class FileLoggerSink : ILoggerSink
         _writer.Dispose();
         if (File.Exists(_filePath))
         {
-            var fileInfo = new FileInfo(_filePath);
+            FileInfo fileInfo = new(_filePath);
             if (_maxSizeBytes < 0 || fileInfo.Length <= _maxSizeBytes)
             {
                 return;
             }
             long excessBytes = fileInfo.Length - _maxSizeBytes;
-            var fs = new FileStream(_filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
-            using var ms = new MemoryStream();
+            FileStream fs = new(_filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+            using MemoryStream ms = new();
             try
             {
-                fs.Seek(excessBytes, SeekOrigin.Begin);
+                _ = fs.Seek(excessBytes, SeekOrigin.Begin);
                 fs.CopyTo(ms);
                 fs.Close();
                 fs = File.Create(_filePath);
-                ms.Seek(0, SeekOrigin.Begin);
+                _ = ms.Seek(0, SeekOrigin.Begin);
                 ms.CopyTo(fs);
                 fs.Close();
             }

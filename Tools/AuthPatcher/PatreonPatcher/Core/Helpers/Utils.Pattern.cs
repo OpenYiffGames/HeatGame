@@ -27,7 +27,7 @@ internal static partial class Utils
             byte[] pool = ArrayPool<byte>.Shared.Rent((int)codeSize);
             try
             {
-                byte[]? methodCilBody = GetCilBodyBytes(assemblySource, method, pool) 
+                byte[]? methodCilBody = GetCilBodyBytes(assemblySource, method, pool)
                     ?? throw new Exception("Failed to read method body");
                 int offset = patternScanner.Find(methodCilBody);
                 return offset >= 0;
@@ -69,11 +69,9 @@ internal static partial class Utils
            bool throwOnMultipleMatches = true)
         {
             int[] scanResult = FindMethodsRVAMatchingPattern(assemblyStream, pattern);
-            if (scanResult.Length == 0)
-            {
-                return null;
-            }
-            return throwOnMultipleMatches
+            return scanResult.Length == 0
+                ? null
+                : throwOnMultipleMatches
                 ? scanResult.Single()
                 : scanResult.FirstOrDefault();
         }

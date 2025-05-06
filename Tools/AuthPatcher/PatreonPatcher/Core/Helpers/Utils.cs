@@ -76,12 +76,12 @@ internal static partial class Utils
     {
         Assembly assembly = Assembly.GetExecutingAssembly();
         string assemblyGuid = (assembly.GetCustomAttribute<GuidAttribute>()?.Value) ?? assembly.GetName().FullName;
-        var path = Path.Combine(
+        string path = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             assemblyGuid);
         if (ensureExists && !Directory.Exists(path))
         {
-            Directory.CreateDirectory(path);
+            _ = Directory.CreateDirectory(path);
         }
         return path;
     }
@@ -177,8 +177,8 @@ internal static partial class Utils
                     return 0x01;
                 }
                 byte low = (byte)(c & 0xFF);
-                if (low is >= 0x01 and <= 0x08 or
-                    >= 0x0E and <= 0x1F or
+                if (low is (>= 0x01 and <= 0x08) or
+                    (>= 0x0E and <= 0x1F) or
                     0x27 or 0x2D or 0x7F)
                 {
                     return 0x01;

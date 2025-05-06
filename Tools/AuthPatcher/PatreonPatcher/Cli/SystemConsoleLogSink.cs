@@ -6,7 +6,7 @@ namespace PatreonPatcher.Cli;
 internal class SystemConsoleLogSink : ILoggerSink
 {
     private readonly IConsole _console;
-    
+
     public LogLevel LogLevel { get; set; } = LogLevel.Debug;
 
     public SystemConsoleLogSink(IConsole console)
@@ -24,7 +24,7 @@ internal class SystemConsoleLogSink : ILoggerSink
 
     public void Write(LogLevel level, string message)
     {
-        var color = Colors[level];
+        ConsoleColor color = Colors[level];
         _console.WriteLine($"[{level}] {message}", color);
     }
 

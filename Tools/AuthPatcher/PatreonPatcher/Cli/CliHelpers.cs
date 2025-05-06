@@ -1,12 +1,12 @@
 
-using System.CommandLine;
-using System.CommandLine.IO;
-using System.Runtime.InteropServices;
 using PatreonPatcher.Core;
 using PatreonPatcher.Core.Helpers;
 using PatreonPatcher.Core.Logging;
+using System.CommandLine;
+using System.CommandLine.IO;
+using System.Runtime.InteropServices;
 
-static class CliHelpers
+internal static class CliHelpers
 {
     public static bool IsValidUnityDirectory(string path)
     {
@@ -26,7 +26,7 @@ static class CliHelpers
             Log.Error("This feature is only available on Windows.");
             throw new PlatformNotSupportedException("This feature is only available on Windows.");
         }
-        var task = Task.Run(() =>
+        Task<string?> task = Task.Run(() =>
         {
             string? gameExecutable;
             do
@@ -48,15 +48,13 @@ static class CliHelpers
 
     public static Task WaitForUserInputAsync()
     {
-        if (Console.IsOutputRedirected || Console.IsErrorRedirected)
-        {
-            return Task.CompletedTask;
-        }
-        return Task.Run(() =>
-        {
-            Console.WriteLine("Press any key to continue...");
-            Console.ReadKey(true);
-        });
+        return Console.IsOutputRedirected || Console.IsErrorRedirected
+            ? Task.CompletedTask
+            : Task.Run(() =>
+            {
+                Console.WriteLine("Press any key to continue...");
+                _ = Console.ReadKey(true);
+            });
     }
 
     public static void WriteErrorMessage(IConsole console)

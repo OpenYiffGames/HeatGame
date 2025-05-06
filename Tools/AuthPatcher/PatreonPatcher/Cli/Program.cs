@@ -1,39 +1,39 @@
-﻿using PatreonPatcher.Core.Helpers;
-using System.Diagnostics.CodeAnalysis;
-using System.CommandLine;
-using PatreonPatcher.Cli;
-using System.CommandLine.Builder;
-using System.CommandLine.Parsing;
+﻿using PatreonPatcher.Cli;
 using PatreonPatcher.Cli.Commands;
-using System.CommandLine.IO;
 using PatreonPatcher.Core;
+using PatreonPatcher.Core.Helpers;
 using PatreonPatcher.Core.Logging;
+using System.CommandLine;
+using System.CommandLine.Builder;
+using System.CommandLine.IO;
+using System.CommandLine.Parsing;
+using System.Diagnostics.CodeAnalysis;
 
 [RequiresDynamicCode("Calls PatreonPatcher.src.Patcher.PatchAsync()")]
 internal static class Program
 {
     private static async Task<int> Main(string[] args)
     {
-        var console = new SystemConsole();
-        var logFile = Path.Combine(
-            Utils.GetLocalStorageDirectory(), 
+        SystemConsole console = new();
+        string logFile = Path.Combine(
+            Utils.GetLocalStorageDirectory(),
             Constants.DefaultLogFileName
         );
-        var consoleLogSink = new SystemConsoleLogSink(console)
+        SystemConsoleLogSink consoleLogSink = new(console)
         {
             LogLevel = LogLevel.Info
         };
-        using var logger = new Logger()
+        using Logger logger = new Logger()
             .AddFileLogging(logFile, maxSizeMB: 10, logLevel: LogLevel.Debug)
             .AddOutputSink(consoleLogSink);
 
         Log.Logger = logger;
 
-        var platformID = Environment.OSVersion.Platform;
+        PlatformID platformID = Environment.OSVersion.Platform;
 
-        var rootCommand = SetupRootCommand(platformID);
+        PatchCommand rootCommand = SetupRootCommand(platformID);
 
-        var cmdBuilder = new CommandLineBuilder(rootCommand)
+        CommandLineBuilder cmdBuilder = new CommandLineBuilder(rootCommand)
             .UseDefaults()
             .UseHelp()
             .UseExceptionHandler(async (e, ctx) =>
@@ -50,13 +50,13 @@ internal static class Program
             cmdBuilder.AddWindowsFileDialogMiddleware();
         }
 
-        var parser = cmdBuilder.Build();
+        Parser parser = cmdBuilder.Build();
         return await parser.InvokeAsync(args, console);
     }
 
     private static PatchCommand SetupRootCommand(PlatformID platformID)
     {
-        var rootCommand = new PatchCommand(platformID);
+        PatchCommand rootCommand = new(platformID);
         return rootCommand;
     }
 
@@ -75,21 +75,21 @@ internal static class Program
 
     private static void AddLoggingMidleware(this CommandLineBuilder builder, SystemConsoleLogSink console)
     {
-        var verboseOption = new Option<bool>("--verbose", "Enable verbose logging")
+        Option<bool> verboseOption = new("--verbose", "Enable verbose logging")
         {
             ArgumentHelpName = "verbose"
         };
         builder.Command.AddGlobalOption(verboseOption);
 
-        builder.AddMiddleware((context) =>
+        _ = builder.AddMiddleware((context) =>
         {
-            var verbose = context.ParseResult.GetValueForOption<bool>(verboseOption);
+            bool verbose = context.ParseResult.GetValueForOption<bool>(verboseOption);
             if (verbose)
             {
                 console.LogLevel = LogLevel.Debug;
                 Log.Debug("Verbose logging enabled.");
             }
-            var symbol = context.ParseResult.CommandResult.Symbol;
+            Symbol symbol = context.ParseResult.CommandResult.Symbol;
             Log.Debug($"[CLI pipeline] command result symbol: {symbol.Name}");
             Log.Debug("[CLI pipeline] command result tokens: {0}", context.ParseResult.CommandResult.Tokens);
         });

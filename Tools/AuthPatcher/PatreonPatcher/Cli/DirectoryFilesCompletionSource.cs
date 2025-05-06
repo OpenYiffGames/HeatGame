@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.CommandLine;
-using System.CommandLine.Completions;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.CommandLine.Completions;
 
 namespace PatreonPatcher.Cli
 {
@@ -15,7 +9,7 @@ namespace PatreonPatcher.Cli
         public MatchType MatchType { get; set; } = MatchType.Win32;
         public MatchCasing MatchCasing { get; set; } = MatchCasing.CaseInsensitive;
         public Func<FileInfo, bool> MatchFilterPredicate { get; set; } = _ => true;
-        
+
         private string AllFilesFilter => MatchType switch
         {
             MatchType.Win32 => "*.*",
@@ -30,9 +24,9 @@ namespace PatreonPatcher.Cli
 
         public IEnumerable<CompletionItem> GetCompletions(CompletionContext context)
         {
-            var possibleFileName = context.WordToComplete;
+            string possibleFileName = context.WordToComplete;
 
-            var matchingFiles = _directoryInfo.GetFiles(FileFilter ?? AllFilesFilter, new EnumerationOptions()
+            IEnumerable<CompletionItem> matchingFiles = _directoryInfo.GetFiles(FileFilter ?? AllFilesFilter, new EnumerationOptions()
             {
                 MatchType = MatchType,
                 MatchCasing = MatchCasing,

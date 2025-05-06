@@ -27,7 +27,7 @@ internal partial class PatternBuilder
     [RequiresUnreferencedCode("This method uses reflection to get property values from the object")]
     public string Render(object? obj)
     {
-        Dictionary<string, object?> symbolValues = new();
+        Dictionary<string, object?> symbolValues = [];
         foreach (string symbol in symbols)
         {
             ArgumentNullException.ThrowIfNull(obj);

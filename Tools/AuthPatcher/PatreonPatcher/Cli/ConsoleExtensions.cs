@@ -3,7 +3,7 @@ using System.CommandLine;
 using System.CommandLine.IO;
 using System.Runtime.InteropServices;
 
-static class ConsoleExtensions
+internal static class ConsoleExtensions
 {
     public static void Write(this IConsole console, string value, ConsoleColor color)
     {
@@ -42,20 +42,12 @@ static class ConsoleExtensions
         {
             return IsWindows10OrGreater();
         }
-        if (currentPlatform == PlatformID.Unix)
-        {
-            return true;
-        }
-        if (currentPlatform == PlatformID.MacOSX)
-        {
-            return true;
-        }
-        return false;
+        return currentPlatform is PlatformID.Unix or PlatformID.MacOSX;
     }
 
     private static bool IsWindows10OrGreater()
     {
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        _ = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
         return Environment.OSVersion.Version.Major >= 10;
     }
 

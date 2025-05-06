@@ -1,10 +1,9 @@
 ﻿using dnlib.DotNet;
 using dnlib.DotNet.Emit;
-using dnlib.DotNet.Pdb;
 using dnlib.PE;
 using PatreonPatcher.Core.Helpers;
-using System.Diagnostics.CodeAnalysis;
 using PatreonPatcher.Core.Logging;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PatreonPatcher.Core;
 
