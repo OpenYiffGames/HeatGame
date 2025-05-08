@@ -20,14 +20,16 @@ internal static partial class Utils
             uint codeSize;
             lock (assemblySource)
             {
-                header = ReadMethodHeader(method, assemblySource, out bool isBigHeader)
+                header = ReadMethodHeader(method, assemblySource)
                      ?? throw new Exception("Failed to read method header");
-                codeSize = isBigHeader ? header.Fat_CodeSize : header.Tiny_Flags_CodeSize;
+                codeSize = header.IsFatMethodBody()
+                    ? header.Fat_CodeSize
+                    : header.TinyCodeSize();
             }
             byte[] pool = ArrayPool<byte>.Shared.Rent((int)codeSize);
             try
             {
-                byte[]? methodCilBody = GetCilBodyBytes(assemblySource, method, pool)
+                byte[]? methodCilBody = GetCilBodyBytes(assemblySource, method, pool, header)
                     ?? throw new Exception("Failed to read method body");
                 int offset = patternScanner.Find(methodCilBody);
                 return offset >= 0;

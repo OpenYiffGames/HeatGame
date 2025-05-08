@@ -1,5 +1,6 @@
 ﻿using dnlib.DotNet;
 using dnlib.IO;
+using PatreonPatcher.Core.Logging;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
@@ -11,7 +12,7 @@ namespace PatreonPatcher.Core.Helpers;
 
 internal static partial class Utils
 {
-    public static byte[]? GetCilBodyBytes(Stream assemblySource, MethodDef method, byte[]? buffer = null)
+    public static byte[]? GetCilBodyBytes(Stream assemblySource, MethodDef method, byte[]? buffer = null, IMAGE_COR_ILMETHOD? methodHeader = null)
     {
         if (!method.HasBody)
         {
@@ -19,35 +20,69 @@ internal static partial class Utils
         }
         lock (assemblySource)
         {
-            IMAGE_COR_ILMETHOD? header = ReadMethodHeader(method, assemblySource, out bool isBigHeader);
-            if (header == null)
+            methodHeader ??= ReadMethodHeader(method, assemblySource);
+            if (methodHeader == null)
             {
                 return null;
             }
-            uint codeSize = isBigHeader ? header.Value.Fat_CodeSize : header.Value.Tiny_Flags_CodeSize;
+            bool isFatHeader = methodHeader.IsFatMethodBody();
+            uint codeSize = isFatHeader
+                ? methodHeader.Value.Fat_CodeSize
+                : methodHeader.TinyCodeSize();
             byte[] methodCilBody = buffer ?? new byte[codeSize];
+
+            int headerSize = Marshal.SizeOf<IMAGE_COR_ILMETHOD>();
+            int realHeaderSize = (methodHeader.Value.Fat_FlagsAndSize >> 12) * 4; // EMCA 335 II.25.4.3 - count of 4-byte integers
+            if (isFatHeader && headerSize != realHeaderSize)
+            {
+                // this will never happen if the CLR is not modified
+                Log.Warning("""
+                    The readed method header size is not equal to the header size pointed by the metadata. This could be an update in the EMCA especification, bad image file or obsfucation.
+                    Method: {0} in {1}
+                    """, method.FullName, method.DeclaringType.DefinitionAssembly.FullName);
+                Log.Debug("Header size: {0}, readed header size: {1}", headerSize, realHeaderSize);
+                int offset = realHeaderSize - headerSize;
+                Log.Debug("Skipping {0} bytes", offset);
+                _ = assemblySource.Seek(offset, SeekOrigin.Current);
+            }
             _ = assemblySource.Read(methodCilBody.AsSpan(0, (int)codeSize));
             return methodCilBody;
         }
     }
 
-    public static IMAGE_COR_ILMETHOD? ReadMethodHeader(MethodDef method, Stream stream, out bool isBigHeader)
+    public static IMAGE_COR_ILMETHOD? ReadMethodHeader(MethodDef method, Stream stream)
     {
-        isBigHeader = method.Body.IsBigHeader;
         long bodyOffset = RVA2FileOffset(method);
         if (bodyOffset < 0)
         {
+            Log.Warning("Invalid method RVA: {0} on {1}", method.RVA, method.FullName);
             return null;
         }
         _ = stream.Seek(bodyOffset, SeekOrigin.Begin);
 
         int ImageCorILMethodSize = Marshal.SizeOf<IMAGE_COR_ILMETHOD>();
         Span<byte> buffer = stackalloc byte[ImageCorILMethodSize];
-        if (!isBigHeader)
+        int headerType = stream.ReadByte();
+        if (headerType == -1)
         {
-            buffer = buffer[..1];
+            throw new EndOfStreamException("Failed to read method header");
         }
-        _ = stream.Read(buffer);
+        buffer[0] = (byte)headerType;
+        headerType &= 0b11; // mask the first 2 bits (header type values: EMCA 335 II.25.4.1)
+        bool isFatMethodBody = headerType is 0x3;
+        if (isFatMethodBody != method.Body.IsBigHeader)
+        {
+            throw new BadImageFormatException("Invalid header type");
+        }
+        if (isFatMethodBody)
+        {
+            int size = stream.Read(buffer[1..]) + 1;
+            int expectedSize = (buffer[1] >> 4) * 4; // EMCA 335 II.25.4.3 - count of 4-byte integers
+            if (size != expectedSize)
+            {
+                throw new BadImageFormatException("Invalid header size");
+            }
+        }
 
         IntPtr ptr = Marshal.AllocHGlobal(ImageCorILMethodSize);
         try
@@ -153,6 +188,44 @@ internal static partial class Utils
         }
 
         return null;
+    }
+
+    public static bool IsFatMethodBody(this IMAGE_COR_ILMETHOD header)
+    {
+        int type = header.TinyFatFormat & 0b11; // mask the first 2 bits (header type values: EMCA 335 II.25.4.1)
+        return type switch
+        {
+            0x3 => true,
+            0x2 => false,
+            _ => throw new BadImageFormatException("Invalid header type"),
+        };
+    }
+
+    public static bool IsFatMethodBody(this IMAGE_COR_ILMETHOD? header)
+    {
+        if (!header.HasValue)
+        {
+            throw new ArgumentNullException(nameof(header));
+        }
+        return header.Value.IsFatMethodBody();
+    }
+
+    public static byte TinyCodeSize(this IMAGE_COR_ILMETHOD header)
+    {
+        if (header.IsFatMethodBody())
+        {
+            throw new InvalidOperationException("Header is not a tiny method body");
+        }
+        return (byte)(header.Tiny_FlagsAndCodeSize >> 2); // skip the first 2 bits (header type values: EMCA 335 II.25.4.1)
+    }
+
+    public static byte TinyCodeSize(this IMAGE_COR_ILMETHOD? header)
+    {
+        if (!header.HasValue)
+        {
+            throw new ArgumentNullException(nameof(header));
+        }
+        return header.Value.TinyCodeSize();
     }
 
     private static string ReadUserStringHeap(this ref DataReader reader)
