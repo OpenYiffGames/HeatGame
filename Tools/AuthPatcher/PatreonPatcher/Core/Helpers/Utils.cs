@@ -26,9 +26,7 @@ internal static partial class Utils
                 return null;
             }
             bool isFatHeader = methodHeader.IsFatMethodBody();
-            uint codeSize = isFatHeader
-                ? methodHeader.Value.Fat_CodeSize
-                : methodHeader.TinyCodeSize();
+            uint codeSize = methodHeader.MethodCodeSize();
             byte[] methodCilBody = buffer ?? new byte[codeSize];
 
             int headerSize = Marshal.SizeOf<IMAGE_COR_ILMETHOD>();
@@ -140,21 +138,6 @@ internal static partial class Utils
         }
     }
 
-    public static async Task<Stream> AsStreamAsync(this AssemblyDef assemblyDef, CancellationToken token = default)
-    {
-        MemoryStream ms = new();
-        try
-        {
-            await Task.Run(() => assemblyDef.Write(ms), token);
-            _ = ms.Seek(0, SeekOrigin.Begin);
-            return ms;
-        }
-        catch
-        {
-            throw;
-        }
-    }
-
     public static MDToken? FindMethodRefToken(this AssemblyDef assemblyDef, string typeName, string methodName)
     {
         return assemblyDef.ManifestModule
@@ -188,44 +171,6 @@ internal static partial class Utils
         }
 
         return null;
-    }
-
-    public static bool IsFatMethodBody(this IMAGE_COR_ILMETHOD header)
-    {
-        int type = header.TinyFatFormat & 0b11; // mask the first 2 bits (header type values: EMCA 335 II.25.4.1)
-        return type switch
-        {
-            0x3 => true,
-            0x2 => false,
-            _ => throw new BadImageFormatException("Invalid header type"),
-        };
-    }
-
-    public static bool IsFatMethodBody(this IMAGE_COR_ILMETHOD? header)
-    {
-        if (!header.HasValue)
-        {
-            throw new ArgumentNullException(nameof(header));
-        }
-        return header.Value.IsFatMethodBody();
-    }
-
-    public static byte TinyCodeSize(this IMAGE_COR_ILMETHOD header)
-    {
-        if (header.IsFatMethodBody())
-        {
-            throw new InvalidOperationException("Header is not a tiny method body");
-        }
-        return (byte)(header.Tiny_FlagsAndCodeSize >> 2); // skip the first 2 bits (header type values: EMCA 335 II.25.4.1)
-    }
-
-    public static byte TinyCodeSize(this IMAGE_COR_ILMETHOD? header)
-    {
-        if (!header.HasValue)
-        {
-            throw new ArgumentNullException(nameof(header));
-        }
-        return header.Value.TinyCodeSize();
     }
 
     private static string ReadUserStringHeap(this ref DataReader reader)

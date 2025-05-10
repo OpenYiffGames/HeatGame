@@ -22,9 +22,7 @@ internal static partial class Utils
             {
                 header = ReadMethodHeader(method, assemblySource)
                      ?? throw new Exception("Failed to read method header");
-                codeSize = header.IsFatMethodBody()
-                    ? header.Fat_CodeSize
-                    : header.TinyCodeSize();
+                codeSize = header.MethodCodeSize();
             }
             byte[] pool = ArrayPool<byte>.Shared.Rent((int)codeSize);
             try
